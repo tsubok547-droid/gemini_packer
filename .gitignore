@@ -1,21 +1,21 @@
-# Pythonのキャッシュファイル
+# Python template
 __pycache__/
 *.pyc
 
-# 仮想環境フォルダ (一般的な名前)
+# Virtual Environment
 venv/
 env/
 .venv/
 .env/
 
-# PyInstallerが生成するフォルダやファイル
+# PyInstaller artifacts
 build/
 dist/
-*.spec
+*.spec/
 
-# IDE/エディタ固有の設定ファイル
+# IDE/Editor specific
 .vscode/
 .idea/
 
-# このアプリが生成するキャッシュファイル
+# Application specific cache
 .gemini_packer_cache.json
