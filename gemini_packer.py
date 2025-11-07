@@ -52,15 +52,31 @@ class GeminiPackerApp(TkinterDnD.Tk):
         self.tree.bind("<Button-1>", self._on_left_click)
         self.tree.bind("<Button-3>", self._on_right_click)
 
+    ### ▼▼▼ 変更箇所 1/2 (UIのセットアップ) ▼▼▼ ###
     def _setup_ui(self):
-        button_frame = ttk.Frame(self)
-        button_frame.pack(fill="x", padx=10, pady=5)
-        self.pack_button = ttk.Button(button_frame, text="✅ 選択したファイルをZIP化", command=self.process_packing)
+        # メインのボタンフレーム
+        main_button_frame = ttk.Frame(self)
+        main_button_frame.pack(fill="x", padx=10, pady=5)
+        
+        self.pack_button = ttk.Button(main_button_frame, text="✅ 選択したファイルをZIP化", command=self.process_packing)
         self.pack_button.pack(side="left", expand=True, fill="x", padx=(0, 5))
-        self.structure_button = ttk.Button(button_frame, text="📜 構成ファイル生成", command=self.create_directory_structure_file)
+        self.structure_button = ttk.Button(main_button_frame, text="📜 構成ファイル生成", command=self.create_directory_structure_file)
         self.structure_button.pack(side="left", expand=True, fill="x", padx=5)
-        self.save_cache_button = ttk.Button(button_frame, text="💾 現在の選択を保存", command=self.save_cache)
+        self.save_cache_button = ttk.Button(main_button_frame, text="💾 現在の選択を保存", command=self.save_cache)
         self.save_cache_button.pack(side="left", expand=True, fill="x", padx=(5, 0))
+
+        # 設定用フレーム (ZIPあたりのファイル数)
+        settings_frame = ttk.Frame(self)
+        settings_frame.pack(fill="x", padx=10, pady=(0, 5))
+        
+        settings_label = ttk.Label(settings_frame, text="1ZIPあたりのファイル数:")
+        settings_label.pack(side="left", padx=(0, 5))
+        
+        self.files_per_zip_var = tk.StringVar(value="10")
+        self.files_per_zip_spinbox = ttk.Spinbox(settings_frame, from_=1, to=1000, textvariable=self.files_per_zip_var, width=5)
+        self.files_per_zip_spinbox.pack(side="left")
+
+        # ツリーフレーム
         tree_frame = ttk.Frame(self)
         tree_frame.pack(expand=True, fill="both", padx=10, pady=(5, 10))
         self.tree = ttk.Treeview(tree_frame, show="tree")
@@ -74,6 +90,7 @@ class GeminiPackerApp(TkinterDnD.Tk):
         tree_frame.grid_columnconfigure(0, weight=1)
         self.drop_target_register(DND_FILES)
         self.dnd_bind('<<Drop>>', self._on_drop)
+    ### ▲▲▲ 変更ここまで ▲▲▲ ###
 
     def create_directory_structure_file(self):
         if not self.root_path:
@@ -226,7 +243,6 @@ class GeminiPackerApp(TkinterDnD.Tk):
         state = data['state']
         self.tree.item(item_id, image=self.check_images[state])
 
-    ### ▼▼▼ 変更箇所 ▼▼▼ ###
     def save_cache(self):
         if not self.root_path:
             messagebox.showwarning("保存不可", "フォルダが読み込まれていません。")
@@ -291,11 +307,20 @@ class GeminiPackerApp(TkinterDnD.Tk):
             self._update_all_displays()
         except Exception as e:
             messagebox.showwarning("キャッシュ読込エラー", f"キャッシュの読み込みに失敗しました:\n{e}")
-    ### ▲▲▲ 変更ここまで ▲▲▲ ###
 
+    ### ▼▼▼ 変更箇所 2/2 (ZIP化処理) ▼▼▼ ###
     def process_packing(self):
         if not self.root_path:
             messagebox.showwarning("エラー", "フォルダが読み込まれていません。")
+            return
+            
+        try:
+            # UIからファイル数を取得
+            files_per_zip = int(self.files_per_zip_var.get())
+            if files_per_zip < 1:
+                raise ValueError
+        except ValueError:
+            messagebox.showerror("入力エラー", "1ZIPあたりのファイル数は1以上の整数を入力してください。")
             return
         
         selected_files = { data['path'] for data in self.item_map.values() if data['state'] != 'unchecked' and data['path'].is_file() }
@@ -308,7 +333,7 @@ class GeminiPackerApp(TkinterDnD.Tk):
         if output_dir.exists(): shutil.rmtree(output_dir)
         output_dir.mkdir()
         
-        files_per_zip = 10
+        # files_per_zip = 10 # <-- この行を削除し、上で取得した変数を使う
         sorted_files = sorted(list(selected_files))
         num_zips = math.ceil(len(sorted_files) / files_per_zip)
         
@@ -339,6 +364,7 @@ class GeminiPackerApp(TkinterDnD.Tk):
             f.write("\n\n---------------------\n\n")
         
         messagebox.showinfo("完了", f"'{output_dir.name}' フォルダに\n{num_zips}個のZIPとprompts.txtを作成しました。")
+    ### ▲▲▲ 変更ここまで ▲▲▲ ###
 
 
 if __name__ == "__main__":

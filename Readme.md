@@ -56,6 +56,13 @@
         ```bash
         python gemini_packer.py
         ```
+## ## gitに反映しないファイルの設定
+
+.gitignoreに以下のファイルを追加してください。
+# Gemini Packer
+.gemini_packer_cache.json
+gemini_files/
+
 
 ---
 ## ## ビルド方法 (自分用の.exeを作成する)

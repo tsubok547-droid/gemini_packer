@@ -17,5 +17,6 @@ dist/
 .vscode/
 .idea/
 
-# Application specific cache
+# Gemini Packer
 .gemini_packer_cache.json
+gemini_files/
