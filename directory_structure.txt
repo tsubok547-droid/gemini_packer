@@ -1,0 +1,11 @@
+gemini_packer/
+├── assets/
+│   ├── checked.gif
+│   ├── partial.gif
+│   └── unchecked.gif
+├── .gitignore
+├── gemini_packer.py
+├── gemini_packer.spec
+├── GeminiPacker.spec
+├── LICENSE
+└── README.md

@@ -52,7 +52,6 @@ class GeminiPackerApp(TkinterDnD.Tk):
         self.tree.bind("<Button-1>", self._on_left_click)
         self.tree.bind("<Button-3>", self._on_right_click)
 
-    ### ▼▼▼ 変更箇所 1/2 (UIのセットアップ) ▼▼▼ ###
     def _setup_ui(self):
         # メインのボタンフレーム
         main_button_frame = ttk.Frame(self)
@@ -90,7 +89,6 @@ class GeminiPackerApp(TkinterDnD.Tk):
         tree_frame.grid_columnconfigure(0, weight=1)
         self.drop_target_register(DND_FILES)
         self.dnd_bind('<<Drop>>', self._on_drop)
-    ### ▲▲▲ 変更ここまで ▲▲▲ ###
 
     def create_directory_structure_file(self):
         if not self.root_path:
@@ -143,6 +141,41 @@ class GeminiPackerApp(TkinterDnD.Tk):
         self.item_map = {}
         self._populate_tree("", self.root_path)
         self._load_cache()
+        
+        # ▼▼▼ 追加: .gitignore の自動更新 ▼▼▼
+        self._update_gitignore()
+
+    def _update_gitignore(self):
+        """プロジェクトの.gitignoreを確認し、必要ならGemini Packerの除外設定を追記する"""
+        if not self.root_path:
+            return
+            
+        gitignore_path = self.root_path / ".gitignore"
+        
+        ignore_entries = [
+            "\n# Gemini Packer\n",
+            ".gemini_packer_cache.json\n",
+            "gemini_files/\n"
+        ]
+
+        if gitignore_path.exists():
+            with open(gitignore_path, 'r', encoding='utf-8') as f:
+                content = f.read()
+            
+            # 既に記述があるかチェック（冪等性の担保）
+            if ".gemini_packer_cache.json" in content or "gemini_files/" in content:
+                return  # 既に設定済みなら何もしない
+                
+            # ファイル末尾が改行で終わっていない場合のケア
+            if content and not content.endswith('\n'):
+                ignore_entries.insert(0, "\n")
+                
+            with open(gitignore_path, 'a', encoding='utf-8') as f:
+                f.writelines(ignore_entries)
+        else:
+            # .gitignoreが存在しない場合は新規作成
+            with open(gitignore_path, 'w', encoding='utf-8') as f:
+                f.writelines([e.lstrip('\n') for e in ignore_entries])
 
     def _populate_tree(self, parent_id, path):
         is_dir = path.is_dir()
@@ -308,7 +341,6 @@ class GeminiPackerApp(TkinterDnD.Tk):
         except Exception as e:
             messagebox.showwarning("キャッシュ読込エラー", f"キャッシュの読み込みに失敗しました:\n{e}")
 
-    ### ▼▼▼ 変更箇所 2/2 (ZIP化処理) ▼▼▼ ###
     def process_packing(self):
         if not self.root_path:
             messagebox.showwarning("エラー", "フォルダが読み込まれていません。")
@@ -329,11 +361,22 @@ class GeminiPackerApp(TkinterDnD.Tk):
             messagebox.showinfo("情報", "圧縮対象のファイルが選択されていません。")
             return
         
+        # ▼▼▼ 変更: 優しい初期化 (不要な全削除をやめる) ▼▼▼
         output_dir = self.root_path / "gemini_files"
-        if output_dir.exists(): shutil.rmtree(output_dir)
-        output_dir.mkdir()
         
-        # files_per_zip = 10 # <-- この行を削除し、上で取得した変数を使う
+        if not output_dir.exists():
+            output_dir.mkdir()
+        else:
+            # フォルダ内の過去のZIPファイルだけを削除
+            for old_zip in output_dir.glob("*.zip"):
+                old_zip.unlink()
+            
+            # 過去の prompts.txt があれば削除
+            old_prompt = output_dir / "prompts.txt"
+            if old_prompt.exists():
+                old_prompt.unlink()
+        # ▲▲▲ 変更ここまで ▲▲▲
+        
         sorted_files = sorted(list(selected_files))
         num_zips = math.ceil(len(sorted_files) / files_per_zip)
         
@@ -364,14 +407,15 @@ class GeminiPackerApp(TkinterDnD.Tk):
             f.write("\n\n---------------------\n\n")
         
         messagebox.showinfo("完了", f"'{output_dir.name}' フォルダに\n{num_zips}個のZIPとprompts.txtを作成しました。")
-    ### ▲▲▲ 変更ここまで ▲▲▲ ###
 
 
 if __name__ == "__main__":
-    try:
-        from ctypes import windll
-        windll.shcore.SetProcessDpiAwareness(1)
-    except: pass
+    # DPI設定をコメントアウトして、Windowsに拡大を任せる
+    # try:
+    #     from ctypes import windll
+    #     windll.shcore.SetProcessDpiAwareness(1)
+    # except: pass
+    
     app = GeminiPackerApp()
     if app.winfo_exists():
         app.mainloop()

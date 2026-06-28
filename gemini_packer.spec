@@ -1,15 +1,11 @@
 # -*- mode: python ; coding: utf-8 -*-
-from PyInstaller.utils.hooks import collect_data_files
-
-datas = [('assets', 'assets')]
-datas += collect_data_files('tkinterdnd2')
 
 
 a = Analysis(
     ['gemini_packer.py'],
     pathex=[],
     binaries=[],
-    datas=datas,
+    datas=[('assets', 'assets')],
     hiddenimports=[],
     hookspath=[],
     hooksconfig={},
