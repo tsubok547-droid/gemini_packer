@@ -1,2 +1,0 @@
-# gemini_packer
-選択したファイル/フォルダをZIP化し、Geminiへのプロンプトを自動生成するGUIアプリ
